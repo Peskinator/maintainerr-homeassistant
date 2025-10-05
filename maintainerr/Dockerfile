@@ -1,30 +1,17 @@
-# Use Home Assistant base image for proper s6 overlay support
-ARG BUILD_FROM
+# Use the official Maintainerr container as the base
+ARG BUILD_FROM=ghcr.io/jorenn92/maintainerr:latest
 FROM ${BUILD_FROM}
 
-# Switch to root to modify filesystem
 USER root
 
-# Install dependencies
-RUN apk add --no-cache nodejs npm
-
-# Copy our run script into image root
+# Copy our startup script into container
 COPY --chmod=755 run.sh /run.sh
 
-# Pull Maintainerr from original upstream image
-# (We extract only its /app and dependencies)
-RUN mkdir -p /opt/maintainerr && \
-    cd /opt/maintainerr && \
-    npm install maintainerr -g
+# Make sure bash or sh exists
+SHELL ["/bin/sh", "-c"]
 
-# Make sure data directory exists
+# Ensure persistent data directory exists
 RUN mkdir -p /data/maintainerr
 
-# Default workdir
-WORKDIR /opt/maintainerr
-
-# Ensure script is executable
-RUN chmod +x /run.sh
-
-# Run script at container start
+# Override entrypoint so our script runs first
 CMD [ "/run.sh" ]
