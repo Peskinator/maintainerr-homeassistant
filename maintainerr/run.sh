@@ -1,24 +1,23 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/sh
 
-bashio::log.info "Starting Maintainerr (Home Assistant Add-on Wrapper)..."
+echo "[INFO] Starting Maintainerr (HA Wrapper)..."
 
-# Read HA config options
-TZ=$(bashio::config 'TZ')
-API_PORT=$(bashio::config 'API_PORT')
+# Read environment vars if set
+TZ=${TZ:-Europe/Brussels}
+API_PORT=${API_PORT:-6246}
 export TZ
 export API_PORT
 
-# Persistent storage
-if [ ! -d /data/maintainerr ]; then
-    mkdir -p /data/maintainerr
-fi
+# Ensure persistent storage
+mkdir -p /data/maintainerr
 
-# Link /opt/data to persistent volume
+# Link /opt/data -> /data/maintainerr
 rm -rf /opt/data
 ln -s /data/maintainerr /opt/data
-bashio::log.info "Linked /opt/data -> /data/maintainerr (persistent)"
+echo "[INFO] Linked /opt/data -> /data/maintainerr (persistent)"
 
-# Launch Maintainerr
-cd /opt/maintainerr
-bashio::log.info "Launching Maintainerr..."
-exec npm start -- --port ${API_PORT:-6246}
+# Run Maintainerr
+cd /app || exit 1
+
+echo "[INFO] Launching Maintainerr on port $API_PORT..."
+exec node dist/main.js --port "$API_PORT"
