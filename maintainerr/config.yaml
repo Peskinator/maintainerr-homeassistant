@@ -1,5 +1,5 @@
 name: "Maintainerr"
-version: "0.1.9"
+version: "0.2.0"
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
 arch:
@@ -8,7 +8,7 @@ arch:
 ports:
   6246/tcp: 6246
 startup: services
-webui: "http://[HOST]:[PORT:6246]"
+webui: http://[HOST]:[PORT:6246]
 backup: hot
 options:
   TZ: "Europe/Brussels"
@@ -17,7 +17,3 @@ schema:
   TZ: "str"
   API_PORT: "int"
 host_network: true
-
-# Make Home Assistant give this add-on persistent storage access
-map:
-  - data:rw
