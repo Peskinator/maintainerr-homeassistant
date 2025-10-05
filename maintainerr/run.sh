@@ -1,27 +1,24 @@
-#!/usr/bin/with-contenv sh
-set -e
+#!/usr/bin/with-contenv bashio
 
-echo "[INFO] Starting Maintainerr (Home Assistant Add-on Wrapper)..."
+bashio::log.info "Starting Maintainerr (Home Assistant Add-on Wrapper)..."
 
-# Read user-configured options
+# Read HA config options
 TZ=$(bashio::config 'TZ')
 API_PORT=$(bashio::config 'API_PORT')
-
 export TZ
 export API_PORT
 
-echo "[INFO] Preparing persistent data directory..."
-mkdir -p /data/maintainerr
-chmod -R 777 /data/maintainerr || true
-
-# Remove ephemeral /opt/data (Docker VOLUME) and replace with symlink to /data/maintainerr
-if [ -L /opt/data ] || [ -d /opt/data ]; then
-    rm -rf /opt/data || true
+# Persistent storage
+if [ ! -d /data/maintainerr ]; then
+    mkdir -p /data/maintainerr
 fi
 
+# Link /opt/data to persistent volume
+rm -rf /opt/data
 ln -s /data/maintainerr /opt/data
-echo "[INFO] Linked /opt/data -> /data/maintainerr (persistent)"
+bashio::log.info "Linked /opt/data -> /data/maintainerr (persistent)"
 
-# Start Maintainerr using supervisord (base image default)
-echo "[INFO] Launching Maintainerr via supervisord..."
-exec /usr/bin/supervisord -c /etc/supervisord.conf
+# Launch Maintainerr
+cd /opt/maintainerr
+bashio::log.info "Launching Maintainerr..."
+exec npm start -- --port ${API_PORT:-6246}
