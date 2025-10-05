@@ -12,7 +12,7 @@ webui: http://[HOST]:[PORT:6246]
 map:
   - config:rw
   - data:rw
-backup: true
+backup: hot
 options:
   TZ: "Europe/Brussels"
   API_PORT: "6246"
