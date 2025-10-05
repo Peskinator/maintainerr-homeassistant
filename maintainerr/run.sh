@@ -6,14 +6,12 @@ bashio::log.info "Starting Maintainerr..."
 TZ=$(bashio::config 'TZ')
 API_PORT=$(bashio::config 'API_PORT')
 
-# Export environment variables
 export TZ
 export API_PORT
 
-# Ensure directory exists
-mkdir -p /config
+# Create symlink from /opt/data to persistent /data
+mkdir -p /data/maintainerr
+ln -sf /data/maintainerr /opt/data
+bashio::log.info "Linked /opt/data -> /data/maintainerr"
 
-bashio::log.info "Data directory: $DATA_DIR"
-
-# Start the application
 exec npm start
