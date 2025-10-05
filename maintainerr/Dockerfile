@@ -1,8 +1,8 @@
 ARG BUILD_FROM
 FROM ghcr.io/jorenn92/maintainerr:latest
 
-# Override the DATA_DIR environment variable
-ENV DATA_DIR=/config
+# Declare the volume so Home Assistant manages it
+VOLUME ["/opt/data"]
 
 # Copy entry script with executable permissions
 COPY --chmod=755 run.sh /run.sh
