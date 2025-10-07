@@ -5,7 +5,7 @@ FROM ghcr.io/jorenn92/maintainerr:latest
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
-# Redirect /opt/data to /data (which Home Assistant maps)
+CMD [ "/run.sh" ]
 RUN rm -rf /opt/data && ln -s /data /opt/data
 
 # Run entry script
