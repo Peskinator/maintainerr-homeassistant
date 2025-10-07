@@ -1,14 +1,12 @@
-ARG BUILD_FROM=ghcr.io/jorenn92/maintainerr:latest
-FROM ${BUILD_FROM}
+ARG BUILD_FROM
+FROM ghcr.io/jorenn92/maintainerr:latest
 
-# Copy initialization script
-COPY run.sh /etc/cont-init.d/00-maintainerr
-RUN chmod a+x /etc/cont-init.d/00-maintainerr
-# Set environment variable if supported by Maintainerr
-ENV MAINTAINERR_DATA_DIR=/data/maintainerr
+# Copy entry script
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
-# Copy run.sh to the correct s6-overlay location
-COPY run.sh /etc/services.d/maintainerr/run
+# Redirect /opt/data to /data (which Home Assistant maps)
+RUN rm -rf /opt/data && ln -s /data /opt/data
 
-# Make the script executable
-RUN chmod a+x /etc/services.d/maintainerr/run
+# Run entry script
+CMD [ "/run.sh" ]

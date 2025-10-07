@@ -1,5 +1,5 @@
-name: "Maintainerr"
-version: "0.2.5"
+name: "Maintainerr HA"
+version: "0.2.6"  # Increment version
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
 arch:
@@ -9,7 +9,10 @@ ports:
   6246/tcp: 6246
 startup: services
 webui: http://[HOST]:[PORT:6246]
-backup: hot
+map:
+  - config:rw
+  - data:rw      # Add this line
+backup: true
 options:
   TZ: "Europe/Brussels"
   API_PORT: "6246"
@@ -17,5 +20,3 @@ schema:
   TZ: "str"
   API_PORT: "int"
 host_network: true
-map:
-  - "data:rw"

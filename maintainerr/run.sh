@@ -1,14 +1,18 @@
 #!/usr/bin/with-contenv bashio
 
-bashio::log.info "Preparing persistent storage for Maintainerr..."
+bashio::log.info "Starting Maintainerr..."
 
-# Prepare persistent path
-mkdir -p /data/maintainerr
+# Read user-configured options
+TZ=$(bashio::config 'TZ')
+API_PORT=$(bashio::config 'API_PORT')
 
-# Create symlink for persistence
-ln -sf /data/maintainerr /opt/data
+# Export environment variables
+export TZ
+export API_PORT
+export CONFIG_PATH=/data
 
-bashio::log.info "Linked /opt/data -> /data/maintainerr (persistent)"
+# Ensure persistent config directory exists
+mkdir -p /data
 
-# Exit successfully
-exit 0
+# Start the application
+exec npm start
