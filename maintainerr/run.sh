@@ -1,18 +1,21 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv bash
+
+# Use bashio for logging and config access
+source /usr/lib/bashio/bashio.sh
 
 bashio::log.info "Starting Maintainerr..."
 
 # Read user-configured options
-TZ=$(bashio::config 'TZ')
-API_PORT=$(bashio::config 'API_PORT')
+export TZ=$(bashio::config 'TZ')
+export API_PORT=$(bashio::config 'API_PORT')
+export DATA_DIR=/data
 
-# Export environment variables
-export TZ
-export API_PORT
-export CONFIG_PATH=/data
-
-# Ensure persistent config directory exists
+# Ensure persistent data directory exists and create symlink
 mkdir -p /data
+ln -s /data /opt/data
+
+bashio::log.info "Data directory linked to /data for persistence."
 
 # Start the application
-exec npm start
+# The binary is typically in /opt/maintainerr/
+exec /opt/maintainerr/maintainerr

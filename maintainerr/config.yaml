@@ -1,7 +1,8 @@
 name: "Maintainerr"
-version: "0.2.7"  # Increment version
+version: "0.2.8"  # Increment version
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
+init: false
 arch:
   - amd64
   - aarch64
