@@ -1,7 +1,7 @@
 ARG BUILD_FROM=ghcr.io/jorenn92/maintainerr:latest
 FROM ${BUILD_FROM}
 
-# Copy initialization script to s6-overlay directory
+# Copy initialization script
 COPY run.sh /etc/cont-init.d/00-maintainerr
 RUN chmod a+x /etc/cont-init.d/00-maintainerr
 # Set environment variable if supported by Maintainerr
