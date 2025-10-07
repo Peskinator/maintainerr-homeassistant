@@ -17,3 +17,5 @@ schema:
   TZ: "str"
   API_PORT: "int"
 host_network: true
+map:
+  - "data:rw"
