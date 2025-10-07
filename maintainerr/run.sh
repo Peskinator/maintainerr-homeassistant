@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/with-contenv bashio
 
-echo "[INFO] Maintainerr (HA Wrapper) - preparing persistent storage..."
+bashio::log.info "Preparing persistent storage for Maintainerr..."
 
 # Prepare persistent path
 mkdir -p /data/maintainerr
@@ -11,4 +11,7 @@ if [ -d /opt/data ]; then
 fi
 ln -sf /data/maintainerr /opt/data
 
-echo "[INFO] Linked /opt/data -> /data/maintainerr (persistent)"
+bashio::log.info "Linked /opt/data -> /data/maintainerr (persistent)"
+
+# Start Maintainerr
+exec /opt/maintainerr/maintainerr
