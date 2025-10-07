@@ -12,5 +12,3 @@ fi
 ln -sf /data/maintainerr /opt/data
 
 echo "[INFO] Linked /opt/data -> /data/maintainerr (persistent)"
-
-# s6 will continue boot sequence automatically after this script exits
