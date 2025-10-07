@@ -1,9 +1,9 @@
 ARG BUILD_FROM=ghcr.io/jorenn92/maintainerr:latest
 FROM ${BUILD_FROM}
 
-# Ensure persistence directory exists
-RUN mkdir -p /data/maintainerr
-
+# Copy initialization script to s6-overlay directory
+COPY run.sh /etc/cont-init.d/00-maintainerr
+RUN chmod a+x /etc/cont-init.d/00-maintainerr
 # Set environment variable if supported by Maintainerr
 ENV MAINTAINERR_DATA_DIR=/data/maintainerr
 

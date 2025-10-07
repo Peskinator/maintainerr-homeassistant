@@ -1,5 +1,5 @@
 name: "Maintainerr"
-version: "0.2.4"
+version: "0.2.5"
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
 arch:
