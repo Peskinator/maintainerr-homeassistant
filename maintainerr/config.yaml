@@ -1,7 +1,8 @@
-name: "Maintainerr HA"
-version: "0.1.1"  # Increment version
+name: "Maintainerr"
+version: "0.1.2"  # Increment version to force update
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
+init: false
 arch:
   - amd64
   - aarch64
@@ -10,8 +11,7 @@ ports:
 startup: services
 webui: http://[HOST]:[PORT:6246]
 map:
-  - config:rw
-  - data:rw      # Add this line
+  - data:rw
 backup: hot
 options:
   TZ: "Europe/Brussels"
