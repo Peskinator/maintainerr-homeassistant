@@ -1,28 +1,28 @@
 #!/bin/sh
 
-echo "[INFO] Starting Maintainerr Add-on..."
+echo "[INFO] Setting up Maintainerr persistence..."
 
-# Set environment variables from Home Assistant config
-export TZ="${TZ:-Europe/Brussels}"
-export API_PORT="${API_PORT:-6246}"
+# Read user-configured options from environment
+# Home Assistant will set these from config.yaml
+TZ="${TZ:-Europe/Brussels}"
+API_PORT="${API_PORT:-6246}"
+
+# Export environment variables for the application
+export TZ
+export API_PORT
 export DATA_DIR="/data"
 export CONFIG_PATH="/data"
 
 # Create symbolic link for persistence
-echo "[INFO] Setting up data persistence..."
 mkdir -p /data
 rm -rf /opt/data 2>/dev/null
 ln -sf /data /opt/data
 
-echo "[INFO] Starting Maintainerr application..."
+echo "[INFO] Persistence configured: /opt/data -> /data"
 
-# According to Home Assistant docs, use the simplest approach first
-if [ -d /opt/maintainerr ]; then
-  echo "[INFO] Starting from /opt/maintainerr..."
-  cd /opt/maintainerr && exec npm start
-elif [ -d /opt/app ]; then
-  echo "[INFO] Starting from /opt/app..."
-  cd /opt/app && exec npm start
+# No need to start the application here as this is a cont-init.d script
+# The original container's init system will start the app automatically
+exit 0
 elif [ -d /app ]; then
   echo "[INFO] Starting from /app..."
   cd /app && exec npm start
