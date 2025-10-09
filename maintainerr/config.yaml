@@ -1,5 +1,5 @@
 name: "Maintainerr"
-version: "0.1.2"  # Increment version to force update
+version: "0.1.2"  # Increment version to force rebuild
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
 init: false
