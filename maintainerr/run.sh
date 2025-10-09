@@ -16,27 +16,27 @@ ln -sf /data /opt/data
 
 echo "[INFO] Starting Maintainerr application..."
 
-# Based on the GitHub repo, this is a Node.js Express app
-# Check for PM2 which is commonly used in the Docker image
-if command -v pm2 >/dev/null; then
-  echo "[INFO] Starting with PM2..."
-  exec pm2-runtime start /opt/maintainerr/server.js --name maintainerr
-elif [ -f /opt/maintainerr/server.js ]; then
-  echo "[INFO] Starting server.js directly..."
-  cd /opt/maintainerr && exec node server.js
-elif [ -f /opt/maintainerr/index.js ]; then
-  echo "[INFO] Starting index.js..."
-  cd /opt/maintainerr && exec node index.js
-elif [ -f /opt/maintainerr/package.json ]; then
-  echo "[INFO] Starting with NPM..."
+# According to Home Assistant docs, use the simplest approach first
+if [ -d /opt/maintainerr ]; then
+  echo "[INFO] Starting from /opt/maintainerr..."
   cd /opt/maintainerr && exec npm start
+elif [ -d /opt/app ]; then
+  echo "[INFO] Starting from /opt/app..."
+  cd /opt/app && exec npm start
+elif [ -d /app ]; then
+  echo "[INFO] Starting from /app..."
+  cd /app && exec npm start
+elif [ -d /opt ]; then
+  echo "[INFO] Starting from /opt..."
+  cd /opt && exec npm start
 else
-  echo "[INFO] Trying default init..."
-  # As last resort, try the original init script
-  # but only if we're running as PID 1
-  if [ -f /init ] && [ "$$" = "1" ]; then
-    echo "[INFO] Running original init script..."
-    exec /init
+  echo "[ERROR] Could not find application directory"
+  echo "[INFO] Directory listing to help debug:"
+  ls -la /
+  ls -la /opt 2>/dev/null
+  ls -la /app 2>/dev/null
+  exit 1
+fi
   else
     echo "[ERROR] Could not find a way to start Maintainerr"
   fi
