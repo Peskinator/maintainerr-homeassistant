@@ -5,7 +5,8 @@ echo "[INFO] Starting Maintainerr Add-on..."
 # Set environment variables from Home Assistant config
 export TZ="${TZ:-Europe/Brussels}"
 export API_PORT="${API_PORT:-6246}"
-export DATA_DIR="/data"  # Set data directory to the persistent /data folder
+export DATA_DIR="/data"
+export CONFIG_PATH="/data"
 
 # Create symbolic link for persistence
 echo "[INFO] Setting up data persistence..."
@@ -15,48 +16,32 @@ ln -sf /data /opt/data
 
 echo "[INFO] Starting Maintainerr application..."
 
-# Try to find the best way to start the app without interfering with s6
-# First look for the node app directly
-if [ -f /opt/app.js ]; then
-  echo "[INFO] Starting Node.js app directly..."
-  cd /opt && exec node app.js
-elif [ -f /opt/index.js ]; then
+# Based on the GitHub repo, this is a Node.js Express app
+# Check for PM2 which is commonly used in the Docker image
+if command -v pm2 >/dev/null; then
+  echo "[INFO] Starting with PM2..."
+  exec pm2-runtime start /opt/maintainerr/server.js --name maintainerr
+elif [ -f /opt/maintainerr/server.js ]; then
+  echo "[INFO] Starting server.js directly..."
+  cd /opt/maintainerr && exec node server.js
+elif [ -f /opt/maintainerr/index.js ]; then
   echo "[INFO] Starting index.js..."
-  cd /opt && exec node index.js
-elif [ -f /app/server.js ]; then
-  echo "[INFO] Starting server.js..."
-  cd /app && exec node server.js
-# If we can't find a direct node entry point, look for npm scripts
-elif [ -f /opt/package.json ]; then
-  echo "[INFO] Starting with npm..."
-  cd /opt && exec npm start
-elif [ -f /app/package.json ]; then
-  echo "[INFO] Starting with npm..."
-  cd /app && exec npm start
-# As a last resort, try running the maintainerr command directly
-elif command -v maintainerr >/dev/null; then
-  echo "[INFO] Running maintainerr command..."
-  exec maintainerr
+  cd /opt/maintainerr && exec node index.js
+elif [ -f /opt/maintainerr/package.json ]; then
+  echo "[INFO] Starting with NPM..."
+  cd /opt/maintainerr && exec npm start
+else
+  echo "[INFO] Trying default init..."
+  # As last resort, try the original init script
+  # but only if we're running as PID 1
+  if [ -f /init ] && [ "$$" = "1" ]; then
+    echo "[INFO] Running original init script..."
+    exec /init
+  else
+    echo "[ERROR] Could not find a way to start Maintainerr"
+  fi
 fi
 
-# If we got here, we couldn't find a way to start the app
-echo "[ERROR] Could not find a way to start Maintainerr"
-echo "[INFO] Listing directories to help debug..."
-ls -la /
-ls -la /opt 2>/dev/null
-ls -la /app 2>/dev/null
-
 # Keep the container running for debugging
+echo "[INFO] Keeping container alive for debugging..."
 tail -f /dev/null
-# Keep container running for debugging
-echo "[INFO] Keeping container running for debugging..."
-tail -f /dev/null
-echo "[INFO] Looking for Node.js application..."
-find / -name "package.json" -o -name "server.js" -o -name "index.js" 2>/dev/null | grep -v "node_modules"
-
-# Look for executable files
-echo "[INFO] Searching for executable files..."
-find /app /opt -type f -executable 2>/dev/null
-
-echo "[ERROR] Could not find Maintainerr binary"
-exit 1
