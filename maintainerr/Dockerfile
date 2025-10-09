@@ -7,6 +7,3 @@ COPY --chmod=755 run.sh /run.sh
 # Set the command to run our script on startup
 CMD [ "/run.sh" ]
 RUN rm -rf /opt/data && ln -s /data /opt/data
-
-# Run entry script
-CMD [ "/run.sh" ]

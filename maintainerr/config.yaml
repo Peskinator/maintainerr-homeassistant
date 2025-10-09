@@ -1,5 +1,5 @@
 name: "Maintainerr"
-version: "0.1.5"  # Increment version
+version: "0.1.6"  # Increment version
 slug: "maintainerr-homeassistant"
 description: "Maintenance tool for the Plex ecosystem"
 init: false

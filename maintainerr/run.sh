@@ -13,41 +13,41 @@ mkdir -p /data
 rm -rf /opt/data 2>/dev/null
 ln -sf /data /opt/data
 
-echo "[INFO] Starting Maintainerr Node.js application..."
+echo "[INFO] Starting Maintainerr application..."
 
-# Based on the GitHub repo, Maintainerr is a Node.js app
-# Check if we need to use PM2 or direct node command
-if command -v pm2 >/dev/null; then
-  echo "[INFO] Starting with PM2..."
-  exec pm2-runtime start /opt/app.js --name maintainerr
-elif [ -f /opt/app.js ]; then
-  echo "[INFO] Starting with Node directly..."
+# Try to find the best way to start the app without interfering with s6
+# First look for the node app directly
+if [ -f /opt/app.js ]; then
+  echo "[INFO] Starting Node.js app directly..."
   cd /opt && exec node app.js
+elif [ -f /opt/index.js ]; then
+  echo "[INFO] Starting index.js..."
+  cd /opt && exec node index.js
 elif [ -f /app/server.js ]; then
   echo "[INFO] Starting server.js..."
   cd /app && exec node server.js
-else
-  echo "[INFO] Falling back to original container startup..."
-  # Let the original container handle startup after we've set up persistence
-  # S6 would typically be used in a base container
-  if [ -f /init ]; then
-    exec /init
-  fi
+# If we can't find a direct node entry point, look for npm scripts
+elif [ -f /opt/package.json ]; then
+  echo "[INFO] Starting with npm..."
+  cd /opt && exec npm start
+elif [ -f /app/package.json ]; then
+  echo "[INFO] Starting with npm..."
+  cd /app && exec npm start
+# As a last resort, try running the maintainerr command directly
+elif command -v maintainerr >/dev/null; then
+  echo "[INFO] Running maintainerr command..."
+  exec maintainerr
 fi
 
-echo "[ERROR] Could not start Maintainerr"
-exit 1
-# Try examining the original ENTRYPOINT and CMD
-echo "[INFO] Checking Dockerfile metadata..."
-if [ -f /package/admin/s6/init ]; then
-  echo "[INFO] Found S6 init script, running original startup sequence"
-  # Let the original S6 initialization take over after our persistence setup
-  exec /package/admin/s6/init
-fi
-
+# If we got here, we couldn't find a way to start the app
 echo "[ERROR] Could not find a way to start Maintainerr"
-echo "[INFO] Please examine the logs to see how the original container starts"
+echo "[INFO] Listing directories to help debug..."
+ls -la /
+ls -la /opt 2>/dev/null
+ls -la /app 2>/dev/null
 
+# Keep the container running for debugging
+tail -f /dev/null
 # Keep container running for debugging
 echo "[INFO] Keeping container running for debugging..."
 tail -f /dev/null
