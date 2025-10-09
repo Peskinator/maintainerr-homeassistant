@@ -1,40 +1,62 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/sh
 
-bashio::log.info "Starting Maintainerr..."
+# Simple shell script that doesn't rely on bashio
+echo "[INFO] Starting Maintainerr Add-on..."
 
-# Read user-configured options
-TZ=$(bashio::config 'TZ')
-API_PORT=$(bashio::config 'API_PORT')
-
-# Export environment variables
-export TZ
-export API_PORT
-export CONFIG_PATH=/data
+# Set environment variables from config
+export TZ="${TZ:-Europe/Brussels}"
+export API_PORT="${API_PORT:-6246}"
+export DATA_DIR="/data"
+export CONFIG_PATH="/data"
 
 # Create symbolic links for persistence
-bashio::log.info "Creating symlink for data persistence..."
+echo "[INFO] Setting up data persistence..."
 mkdir -p /data
 rm -rf /opt/data 2>/dev/null
 ln -sf /data /opt/data
 
-# Debug: Find the maintainerr binary
-bashio::log.info "Locating Maintainerr binary..."
-find / -name maintainerr -type f 2>/dev/null
+# Debug: Show container directory structure
+echo "[INFO] Debugging container structure..."
+ls -la /
+ls -la /opt/ 2>/dev/null
+ls -la /app/ 2>/dev/null
 
-bashio::log.info "Starting Maintainerr application..."
-# Try common paths for the binary - we'll find the right one
-if [ -f /app/maintainerr ]; then
-  exec /app/maintainerr
-elif [ -f /opt/maintainerr/maintainerr ]; then
-  exec /opt/maintainerr/maintainerr
-else
-  # Find the binary and execute it
-  BINARY_PATH=$(find / -name maintainerr -type f 2>/dev/null | head -1)
-  if [ -n "$BINARY_PATH" ]; then
-    bashio::log.info "Found Maintainerr at $BINARY_PATH"
-    exec $BINARY_PATH
-  else
-    bashio::log.error "Could not find Maintainerr binary"
-    exit 1
+# Debug: Check what processes are running in the container
+echo "[INFO] Looking for running processes..."
+ps aux
+
+# Try to find the binary using various patterns
+echo "[INFO] Searching for Maintainerr binary..."
+
+# Try known common paths with case variations
+for binary in \
+  /app/maintainerr \
+  /app/Maintainerr \
+  /opt/maintainerr/maintainerr \
+  /opt/maintainerr/Maintainerr \
+  /maintainerr \
+  /Maintainerr \
+  /usr/bin/maintainerr \
+  /usr/local/bin/maintainerr
+do
+  if [ -f "$binary" ]; then
+    echo "[INFO] Found Maintainerr at $binary"
+    exec "$binary"
   fi
-fi
+done
+
+# Look for likely candidates in PATH
+echo "[INFO] Checking PATH for maintainerr..."
+which maintainerr 2>/dev/null
+which Maintainerr 2>/dev/null
+
+# Look for JS files if it's a Node app
+echo "[INFO] Looking for Node.js application..."
+find / -name "package.json" -o -name "server.js" -o -name "index.js" 2>/dev/null | grep -v "node_modules"
+
+# Look for executable files
+echo "[INFO] Searching for executable files..."
+find /app /opt -type f -executable 2>/dev/null
+
+echo "[ERROR] Could not find Maintainerr binary"
+exit 1
