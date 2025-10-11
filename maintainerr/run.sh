@@ -5,65 +5,65 @@ echo "[ha-addon] Starting Maintainerr (HA persistence wrapper)..."
 
 PERSIST="/data"
 SRC="/opt/data"
-CONFIG_MIRROR="/config/addons_config/maintainerr"
+CONFIG_DIR="/config/addons_config/maintainerr"
 
-# Ensure persistent dir exists
+# Ensure mounts/dirs exist
 mkdir -p "$PERSIST"
-# Ensure parent for /opt/data exists
 mkdir -p "$(dirname "$SRC")"
+mkdir -p "$CONFIG_DIR/logs"
+touch "$CONFIG_DIR/maintainerr.sqlite" 2>/dev/null || true
 
-# Ensure persist targets exist
-mkdir -p "$PERSIST/logs"
-touch "$PERSIST/maintainerr.sqlite" 2>/dev/null || true
-
-# Make writable for the app user (node) if present
+# Permissions for app user
 if id node >/dev/null 2>&1; then
-  chown -R node:node "$PERSIST" 2>/dev/null || true
+  chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
 else
-  chmod -R 0777 "$PERSIST" 2>/dev/null || true
+  chmod -R 0777 "$CONFIG_DIR" 2>/dev/null || true
 fi
 
-# Inside the upstream /opt/data mount, link specific payloads to /data
-# Database file
+# Point upstream payloads at /config/addons_config/maintainerr
+# Database
 if [ -e "$SRC/maintainerr.sqlite" ] && [ ! -L "$SRC/maintainerr.sqlite" ]; then
   rm -f "$SRC/maintainerr.sqlite" 2>/dev/null || true
 fi
-ln -snf "$PERSIST/maintainerr.sqlite" "$SRC/maintainerr.sqlite"
+ln -snf "$CONFIG_DIR/maintainerr.sqlite" "$SRC/maintainerr.sqlite"
 
-# Logs directory
+# Logs
 if [ -e "$SRC/logs" ] && [ ! -L "$SRC/logs" ]; then
   rm -rf "$SRC/logs" 2>/dev/null || true
 fi
-ln -snf "$PERSIST/logs" "$SRC/logs"
+ln -snf "$CONFIG_DIR/logs" "$SRC/logs"
 
-echo "[ha-addon] Linked payloads: $SRC/maintainerr.sqlite -> $PERSIST/maintainerr.sqlite, $SRC/logs -> $PERSIST/logs"
+echo "[ha-addon] Using $CONFIG_DIR for DB/logs (linked into $SRC)"
 
-# Create a user-facing mirror under /config/addons_config/maintainerr
-mkdir -p "$CONFIG_MIRROR"
-# Link DB
-if [ -e "$CONFIG_MIRROR/maintainerr.sqlite" ] && [ ! -L "$CONFIG_MIRROR/maintainerr.sqlite" ]; then
-  rm -f "$CONFIG_MIRROR/maintainerr.sqlite" 2>/dev/null || true
-fi
-ln -snf "$PERSIST/maintainerr.sqlite" "$CONFIG_MIRROR/maintainerr.sqlite"
-# Link logs directory
-if [ -e "$CONFIG_MIRROR/logs" ] && [ ! -L "$CONFIG_MIRROR/logs" ]; then
-  rm -rf "$CONFIG_MIRROR/logs" 2>/dev/null || true
-fi
-ln -snf "$PERSIST/logs" "$CONFIG_MIRROR/logs"
+# Environment hints (for components that honor them)
+export CONFIG_PATH="$CONFIG_DIR"
+export XDG_CONFIG_HOME="$CONFIG_DIR"
+export XDG_DATA_HOME="$CONFIG_DIR"
+export DATA_DIR="$CONFIG_DIR"
+export DATA_PATH="$CONFIG_DIR"
+export APP_DATA_DIR="$CONFIG_DIR"
+export MAINTAINERR_DATA_DIR="$CONFIG_DIR"
 
-echo "[ha-addon] Exposed mirror at $CONFIG_MIRROR (symlinks to /data)"
-
-# Helpful envs for apps that honor them
-export CONFIG_PATH="$PERSIST"
-export XDG_CONFIG_HOME="$PERSIST"
-export XDG_DATA_HOME="$PERSIST"
-export DATA_DIR="$PERSIST"
-export DATA_PATH="$PERSIST"
-export APP_DATA_DIR="$PERSIST"
-export MAINTAINERR_DATA_DIR="$PERSIST"
-
-# Chain to upstream supervisor (foreground)
+# Start upstream supervisor (foreground)
 if [ -x /usr/bin/supervisord ]; then
+  if [ -f /etc/supervisord.conf ]; then
+    exec /usr/bin/supervisord -n -c /etc/supervisord.conf
+  else
+    exec /usr/bin/supervisord -n
+  fi
+fi
+
+# Fallbacks
+if command -v supervisord >/dev/null 2>&1; then
+  exec supervisord -n
+fi
+
+if command -v npm >/dev/null 2>&1; then
+  exec npm start
+fi
+
+echo "[ha-addon] No supervisor or npm found; sleeping."
+exec tail -f /dev/null
   if [ -f /etc/supervisord.conf ]; then
     exec /usr/bin/supervisord -n -c /etc/supervisord.conf
   else
