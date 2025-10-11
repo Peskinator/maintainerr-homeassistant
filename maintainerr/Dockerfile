@@ -1,5 +1,12 @@
-ARG BUILD_FROM=ghcr.io/jorenn92/maintainerr:latest
-FROM ${BUILD_FROM}
+ARG BUILD_FROM
+FROM ghcr.io/jorenn92/maintainerr:latest
 
-# Copy entry script into s6 init directory
-COPY --chmod=755 run.sh /etc/cont-init.d/run.sh
+# Copy entry script
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+# Redirect /opt/data to /data (which Home Assistant maps)
+RUN rm -rf /opt/data && ln -s /data /opt/data
+
+# Run entry script
+CMD [ "/run.sh" ]
