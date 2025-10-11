@@ -11,16 +11,16 @@ mkdir -p "$PERSIST"
 # Ensure parent for /opt/data exists
 mkdir -p "$(dirname "$SRC")"
 
-# Make it writable for the app (prefer node user if present)
-if id node >/dev/null 2>&1; then
-  chown -R node:node "$PERSIST" 2>/dev/null || true
-else
-  chmod 0777 "$PERSIST" 2>/dev/null || true
-fi
-
 # Ensure persist targets exist
 mkdir -p "$PERSIST/logs"
 touch "$PERSIST/maintainerr.sqlite" 2>/dev/null || true
+
+# Make writable for the app user (node) if present
+if id node >/dev/null 2>&1; then
+  chown -R node:node "$PERSIST" 2>/dev/null || true
+else
+  chmod -R 0777 "$PERSIST" 2>/dev/null || true
+fi
 
 # Inside the upstream /opt/data mount, link specific payloads to /data
 # Database file
