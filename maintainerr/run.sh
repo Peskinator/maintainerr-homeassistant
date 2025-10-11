@@ -8,6 +8,8 @@ SRC="/opt/data"
 
 # Ensure persistent dir exists
 mkdir -p "$PERSIST"
+# Ensure parent for /opt/data exists
+mkdir -p "$(dirname "$SRC")"
 
 # Make it writable for the app (prefer node user if present)
 if id node >/dev/null 2>&1; then
@@ -46,9 +48,7 @@ fi
 
 echo "[ha-addon] No supervisor or npm found; sleeping."
 exec tail -f /dev/null
-fi
-
-if command -v npm >/dev/null 2>&1; then
+exec tail -f /dev/null
   exec npm start
 fi
 
