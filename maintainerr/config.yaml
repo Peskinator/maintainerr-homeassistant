@@ -1,5 +1,5 @@
 name: "Maintainerr"
-version: "0.1.7"
+version: "0.1.8"
 slug: "maintainerr"
 description: "Maintenance tool for the Plex ecosystem"
 arch:
@@ -19,5 +19,4 @@ schema:
   TZ: "str"
   API_PORT: "int"
 host_network: true
-privileged:
-  - SYS_ADMIN
+
