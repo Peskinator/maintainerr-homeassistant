@@ -18,22 +18,33 @@ else
   chmod 0777 "$PERSIST" 2>/dev/null || true
 fi
 
-# Overlay the upstream volume with our persistent /data using a bind mount
-if grep -qs " $SRC " /proc/mounts; then
-  echo "[ha-addon] $SRC is already a mount, binding $PERSIST over it..."
+# Ensure persist targets exist
+mkdir -p "$PERSIST/logs"
+touch "$PERSIST/maintainerr.sqlite" 2>/dev/null || true
+
+# Inside the upstream /opt/data mount, link specific payloads to /data
+# Database file
+if [ -e "$SRC/maintainerr.sqlite" ] && [ ! -L "$SRC/maintainerr.sqlite" ]; then
+  rm -f "$SRC/maintainerr.sqlite" 2>/dev/null || true
 fi
-# Perform bind mount (BusyBox mount supports -o bind)
-mount -o bind "$PERSIST" "$SRC" 2>/dev/null || {
-  echo "[ha-addon] bind mount failed, falling back to symlink"
-  rm -rf "$SRC" 2>/dev/null || true
-  ln -s "$PERSIST" "$SRC" 2>/dev/null || true
-}
-echo "[ha-addon] Using $SRC -> $PERSIST"
+ln -snf "$PERSIST/maintainerr.sqlite" "$SRC/maintainerr.sqlite"
+
+# Logs directory
+if [ -e "$SRC/logs" ] && [ ! -L "$SRC/logs" ]; then
+  rm -rf "$SRC/logs" 2>/dev/null || true
+fi
+ln -snf "$PERSIST/logs" "$SRC/logs"
+
+echo "[ha-addon] Linked payloads: $SRC/maintainerr.sqlite -> $PERSIST/maintainerr.sqlite, $SRC/logs -> $PERSIST/logs"
 
 # Helpful envs for apps that honor them
 export CONFIG_PATH="$PERSIST"
 export XDG_CONFIG_HOME="$PERSIST"
 export XDG_DATA_HOME="$PERSIST"
+export DATA_DIR="$PERSIST"
+export DATA_PATH="$PERSIST"
+export APP_DATA_DIR="$PERSIST"
+export MAINTAINERR_DATA_DIR="$PERSIST"
 
 # Chain to upstream supervisor (foreground)
 if [ -x /usr/bin/supervisord ]; then
