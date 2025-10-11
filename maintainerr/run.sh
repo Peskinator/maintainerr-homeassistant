@@ -18,10 +18,17 @@ else
   chmod 0777 "$PERSIST" 2>/dev/null || true
 fi
 
-# Replace /opt/data with symlink to /data (no migration)
-rm -rf "$SRC" 2>/dev/null || true
-ln -s "$PERSIST" "$SRC" 2>/dev/null || true
-echo "[ha-addon] Linked $SRC -> $PERSIST"
+# Overlay the upstream volume with our persistent /data using a bind mount
+if grep -qs " $SRC " /proc/mounts; then
+  echo "[ha-addon] $SRC is already a mount, binding $PERSIST over it..."
+fi
+# Perform bind mount (BusyBox mount supports -o bind)
+mount -o bind "$PERSIST" "$SRC" 2>/dev/null || {
+  echo "[ha-addon] bind mount failed, falling back to symlink"
+  rm -rf "$SRC" 2>/dev/null || true
+  ln -s "$PERSIST" "$SRC" 2>/dev/null || true
+}
+echo "[ha-addon] Using $SRC -> $PERSIST"
 
 # Helpful envs for apps that honor them
 export CONFIG_PATH="$PERSIST"
@@ -43,12 +50,6 @@ if command -v supervisord >/dev/null 2>&1; then
 fi
 
 if command -v npm >/dev/null 2>&1; then
-  exec npm start
-fi
-
-echo "[ha-addon] No supervisor or npm found; sleeping."
-exec tail -f /dev/null
-exec tail -f /dev/null
   exec npm start
 fi
 
