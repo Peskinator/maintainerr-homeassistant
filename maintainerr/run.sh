@@ -62,26 +62,26 @@ export DATA_PATH="$PERSIST"
 export APP_DATA_DIR="$PERSIST"
 export MAINTAINERR_DATA_DIR="$PERSIST"
 
-# Drop privileges to node for supervisord if available
-USER_FLAG=""
-if id node >/dev/null 2>&1; then
-  USER_FLAG="-u node"
-fi
-
 # Chain to upstream supervisor (foreground)
 if [ -x /usr/bin/supervisord ]; then
   if [ -f /etc/supervisord.conf ]; then
-    exec /usr/bin/supervisord -n $USER_FLAG -c /etc/supervisord.conf
+    exec /usr/bin/supervisord -n -c /etc/supervisord.conf
   else
-    exec /usr/bin/supervisord -n $USER_FLAG
+    exec /usr/bin/supervisord -n
   fi
 fi
 
 # Fallbacks
 if command -v supervisord >/dev/null 2>&1; then
-  exec supervisord -n $USER_FLAG
+  exec supervisord -n
 fi
 
+if command -v npm >/dev/null 2>&1; then
+  exec npm start
+fi
+
+echo "[ha-addon] No supervisor or npm found; sleeping."
+exec tail -f /dev/null
 if command -v npm >/dev/null 2>&1; then
   exec npm start
 fi
