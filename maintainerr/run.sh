@@ -11,38 +11,46 @@ CONFIG_DIR="/config/addons_config/maintainerr"
 mkdir -p "$PERSIST"
 mkdir -p "$(dirname "$SRC")"
 
-# Detect if /config is mounted and writable
+# Wait for /config mount (up to 15s) and verify writable
 CONFIG_READY=0
-if grep -qs " /config " /proc/mounts; then
-  if sh -c 'touch /config/.ha_addon_w 2>/dev/null && rm -f /config/.ha_addon_w 2>/dev/null'; then
-    CONFIG_READY=1
+for i in $(seq 1 15); do
+  if grep -qs " /config " /proc/mounts; then
+    if sh -c 'touch /config/.ha_addon_w 2>/dev/null && rm -f /config/.ha_addon_w 2>/dev/null'; then
+      CONFIG_READY=1
+      break
+    fi
   fi
-fi
+  sleep 1
+done
 
 if [ "$CONFIG_READY" -eq 1 ]; then
-  # Prepare mirror under /config/addons_config/maintainerr
-  mkdir -p "/config/addons_config" "$CONFIG_DIR" "$CONFIG_DIR/logs"
-  touch "$CONFIG_DIR/maintainerr.sqlite" 2>/dev/null || true
+  # Prepare mirror under /config/addons_config/maintainerr (stepwise, guard failures)
+  if mkdir -p /config/addons_config && mkdir -p "$CONFIG_DIR" && mkdir -p "$CONFIG_DIR/logs"; then
+    touch "$CONFIG_DIR/maintainerr.sqlite" 2>/dev/null || true
 
-  # Permissions for app user
-  if id node >/dev/null 2>&1; then
-    chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
+    # Permissions for app user
+    if id node >/dev/null 2>&1; then
+      chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
+    else
+      chmod -R 0777 "$CONFIG_DIR" 2>/dev/null || true
+    fi
+
+    # Point upstream payloads at /config/addons_config/maintainerr
+    if [ -e "$SRC/maintainerr.sqlite" ] && [ ! -L "$SRC/maintainerr.sqlite" ]; then
+      rm -f "$SRC/maintainerr.sqlite" 2>/dev/null || true
+    fi
+    ln -snf "$CONFIG_DIR/maintainerr.sqlite" "$SRC/maintainerr.sqlite"
+
+    if [ -e "$SRC/logs" ] && [ ! -L "$SRC/logs" ]; then
+      rm -rf "$SRC/logs" 2>/dev/null || true
+    fi
+    ln -snf "$CONFIG_DIR/logs" "$SRC/logs"
+
+    echo "[ha-addon] Using $CONFIG_DIR for DB/logs (linked into $SRC)"
   else
-    chmod -R 0777 "$CONFIG_DIR" 2>/dev/null || true
+    CONFIG_READY=0
+    echo "[ha-addon] Failed to create $CONFIG_DIR hierarchy; using /data fallback"
   fi
-
-  # Point upstream payloads at /config/addons_config/maintainerr
-  if [ -e "$SRC/maintainerr.sqlite" ] && [ ! -L "$SRC/maintainerr.sqlite" ]; then
-    rm -f "$SRC/maintainerr.sqlite" 2>/dev/null || true
-  fi
-  ln -snf "$CONFIG_DIR/maintainerr.sqlite" "$SRC/maintainerr.sqlite"
-
-  if [ -e "$SRC/logs" ] && [ ! -L "$SRC/logs" ]; then
-    rm -rf "$SRC/logs" 2>/dev/null || true
-  fi
-  ln -snf "$CONFIG_DIR/logs" "$SRC/logs"
-
-  echo "[ha-addon] Using $CONFIG_DIR for DB/logs (linked into $SRC)"
 else
   echo "[ha-addon] /config not mounted/writable; skipping mirror creation"
 fi
@@ -84,7 +92,5 @@ if command -v npm >/dev/null 2>&1; then
   exec npm start
 fi
 
-echo "[ha-addon] No supervisor or npm found; sleeping."
-exec tail -f /dev/null
 echo "[ha-addon] No supervisor or npm found; sleeping."
 exec tail -f /dev/null
