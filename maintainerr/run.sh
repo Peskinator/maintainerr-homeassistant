@@ -64,33 +64,3 @@ fi
 
 echo "[ha-addon] No supervisor or npm found; sleeping."
 exec tail -f /dev/null
-else
-  export CONFIG_PATH="$PERSIST"
-  export XDG_CONFIG_HOME="$PERSIST"
-  export XDG_DATA_HOME="$PERSIST"
-  export DATA_DIR="$PERSIST"
-  export DATA_PATH="$PERSIST"
-  export APP_DATA_DIR="$PERSIST"
-  export MAINTAINERR_DATA_DIR="$PERSIST"
-fi
-
-# Start upstream supervisor (foreground)
-if [ -x /usr/bin/supervisord ]; then
-  if [ -f /etc/supervisord.conf ]; then
-    exec /usr/bin/supervisord -n -c /etc/supervisord.conf
-  else
-    exec /usr/bin/supervisord -n
-  fi
-fi
-
-# Fallbacks
-if command -v supervisord >/dev/null 2>&1; then
-  exec supervisord -n
-fi
-
-if command -v npm >/dev/null 2>&1; then
-  exec npm start
-fi
-
-echo "[ha-addon] No supervisor or npm found; sleeping."
-exec tail -f /dev/null
